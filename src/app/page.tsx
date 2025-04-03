@@ -255,7 +255,7 @@ const WhisperTranscription: React.FC = () => {
   useEffect(() => {
     if (audioFile) {
       console.log(audioFile)
-      // sendDataToAPI()
+      sendDataToAPI()
     }
   }, [audioFile])
 
@@ -291,7 +291,7 @@ const WhisperTranscription: React.FC = () => {
       {/* Header */}
       <header className="w-full p-6 bg-blue-950 bg-opacity-70 backdrop-blur-sm border-b border-blue-400 text-white shadow-xl z-10 flex-shrink-0">
         <div className="container mx-auto flex items-center">
-          <Waves className="mr-4 text-blue-300" size={40} />
+          <Mic className="mr-4 text-blue-300" size={40} />
           <h1 className="text-3xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-white to-blue-200">
             Whisper Transcription
           </h1>

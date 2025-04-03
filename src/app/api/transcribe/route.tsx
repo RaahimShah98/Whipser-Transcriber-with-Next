@@ -62,7 +62,12 @@ initializeAssistant().then((assistantId) => {
 const temp_save_to_mp3 = async (file: Base64URLString) => {
     try {
         console.log("SAVING FILE: ")
-        const buffer = Buffer.from(file, 'base64');
+        // const buffer = Buffer.from(file, 'base64');
+        const base64Data = file.includes('base64,')
+            ? file.split('base64,')[1]
+            : file;
+
+        const buffer = Buffer.from(base64Data, 'base64');
         const tempDir = path.join(process.cwd(), 'temp');
         if (!fs.existsSync(tempDir)) {
             fs.mkdirSync(tempDir);
@@ -79,7 +84,7 @@ const temp_save_to_mp3 = async (file: Base64URLString) => {
 // Read mp3 file for transcription
 const reading_mp3 = async () => {
     try {
-        
+
         const tempDir = path.join(process.cwd(), "temp");
         console.log("TEMP DIR: ", tempDir)
         // Read files in the directory
