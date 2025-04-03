@@ -208,10 +208,10 @@ const WhisperTranscription: React.FC = () => {
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(chunks, { type: "audio/mpeg" });
         console.log(audioBlob);
-        
+
         const fileName = `recording-${Date.now()}.mp3`
 
-        const audioFile = new File([audioBlob] , fileName , {type:"audio/mpeg"})
+        const audioFile = new File([audioBlob], fileName, { type: "audio/mpeg" })
 
         // const base64String = await convertBlobToBase64(audioBlob);
         const base64String = await convertToBase64(audioFile);
@@ -269,7 +269,7 @@ const WhisperTranscription: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-gradient-to-b from-blue-950 to-black flex flex-col overflow-hidden relative">
+    <div className="h-screen w-screen bg-gradient-to-b from-blue-950 to-black flex flex-col overflow-hidden relative">
       {/* Particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {particles.map(particle => (
@@ -289,17 +289,17 @@ const WhisperTranscription: React.FC = () => {
       </div>
 
       {/* Header */}
-      <header className="w-full p-6 bg-blue-950 bg-opacity-70 backdrop-blur-sm border-b border-blue-400 text-white shadow-xl z-10 flex-shrink-0">
+      <header className="w-full p-6 bg-blue-950 bg-opacity-10 backdrop-blur-sm border-b border-blue-400 text-white shadow-xl z-10 flex-shrink-0">
         <div className="container mx-auto flex items-center">
           <Mic className="mr-4 text-blue-300" size={40} />
-          <h1 className="text-3xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-white to-blue-200">
+          <h1 className="text-3xl font-extrabold tracking-wide text-white">
             Whisper Transcription
           </h1>
         </div>
       </header>
 
       {/* Conversation Container - Now with flex-grow and overflow-y-auto */}
-      <main className="flex-grow flex flex-col w-full container mx-auto px-4 py-6 overflow-y-auto z-10">
+      <main className="flex-grow flex flex-col w-full px-4 py-6 overflow-y-auto scrollbar-pretty z-10">
         <div className="space-y-6 min-h-min">
           {/* Initial Whisper Message */}
           <div className="w-full mx-auto">
@@ -374,7 +374,7 @@ const WhisperTranscription: React.FC = () => {
               onClick={togglePlay}
               className="bg-blue-800 hover:bg-blue-700 text-white p-2 rounded-full w-10 h-10 flex items-center justify-center transition-colors cursor-pointer"
             >
-              {isPlaying ? <Pause size={20} onClick={stopRecording}/> : <Play size={20} onClick={startRecording} />}
+              {isPlaying ? <Pause size={20} onClick={stopRecording} /> : <Play size={20} onClick={startRecording} />}
             </button>
           </div>
         </div>

@@ -109,7 +109,7 @@ const reading_mp3 = async () => {
 };
 
 // Transcribe the audio file using OpenAI API
-const transcribeAudio = async () => {
+const transcribeAudio = async (filePath: string) => {
     const lastFilePath = await reading_mp3()
 
     if (!lastFilePath) {
@@ -118,7 +118,7 @@ const transcribeAudio = async () => {
     }
 
     try {
-        const transcipriton = await openAI.audio.transcriptions.create({
+        const transcipriton = await openAI.audio.translations.create({
             file: fs.createReadStream(lastFilePath),
             model: "whisper-1",
         })
@@ -132,10 +132,16 @@ const transcribeAudio = async () => {
 
         const response = await get_response_from_assitant(transcipriton.text);
 
-        return { transcription: transcipriton.text, keypoints: response, role: "assistant" }
+        return {
+            transcription: transcipriton.text,
+            keypoints: response,
+            role: "assistant",
+            filePath: filePath // Return the filePath for deletion
+        };
     }
     catch (e) {
-        console.log("TRANSCIRPTION ERROR: ", e.message)
+        console.log("TRANSCRIPTION ERROR: ", e.message);
+        return { statusCode: 500, message: e.message, filePath: filePath };
     }
 }
 
@@ -209,17 +215,16 @@ const get_response_from_assitant = async (message: string) => {
 }
 
 //Delete after transcription is Complete
-// const delete_temp_file = async (filePath: string) => {
-//     const lastFilePath = await reading_mp3()
-//     try {
-//         if (fs.existsSync(lastFilePath)) {
-//             fs.unlinkSync(lastFilePath);
-//             console.log(`Deleted temporary file: ${filePath}`);
-//         }
-//     } catch (error) {
-//         console.error("Error deleting file:", error.message);
-//     }
-// };
+const delete_temp_file = async (filePath: string) => {
+    try {
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`Deleted temporary file: ${filePath}`);
+        }
+    } catch (error) {
+        console.error("Error deleting file:", error.message);
+    }
+};
 
 
 export async function POST(request: NextRequest) {
@@ -232,14 +237,24 @@ export async function POST(request: NextRequest) {
         if (!audio) {
             return NextResponse.json({ message: "No file found" } as ResponseData, { status: 400 });
         }
-        const path = temp_save_to_mp3(audio).then((filePath) => {
-            console.log("File saved to: ", filePath)
-        })
 
-        if (!path) {
+
+        const filePath = await temp_save_to_mp3(audio);
+        console.log("File saved to: ", filePath);
+
+        if (!filePath) {
             return NextResponse.json({ message: "File not saved" } as ResponseData, { status: 500 });
         }
-        const result = await transcribeAudio()
+
+        // Process the file
+        const result = await transcribeAudio(filePath);
+
+        // Delete the file after processing
+        await delete_temp_file(filePath);
+        console.log("Temporary file cleaned up");
+
+
+
         if (result?.statusCode === 400) {
             return NextResponse.json({ message: result.message } as ResponseData, { status: 400 });
         }
