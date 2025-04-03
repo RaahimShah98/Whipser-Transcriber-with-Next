@@ -9,7 +9,7 @@ Here’s your README section:
    npm install
    ```
 2. **Set environment variables**  
-   Add the following variables to your `.env.local` file:  
+   create a .env.local file in your root directory. Add the following variables to your `.env.local` file:  
    ```
    NEXT_PUBLIC_OPENAI_API_KEY=your-api-key
    NEXT_PUBLIC_OPENAI_ASSISTANT_ID=your-assistant-id
