@@ -4,7 +4,7 @@ import { Upload, Mic, Waves } from 'lucide-react';
 import GloomyAudioPlayer from './audioPlayer';
 import { Play, Pause } from 'lucide-react';
 // import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
-
+import jsPDF from 'jspdf';
 
 
 interface ResponseInterface {
@@ -268,6 +268,108 @@ const WhisperTranscription: React.FC = () => {
     setIsPlaying(!isPlaying);
   };
 
+  //Generate pdf
+
+//Generate PDF with justified text
+const generatePDF = (transcript: string, keypoints: any[]) => {
+  console.log("Generating PDF...");
+  const doc = new jsPDF();
+
+  doc.setFontSize(20);
+  doc.text("Transcription", 20, 20);
+
+  doc.setFontSize(12);
+  let yOffset = justifyText(transcript, doc, 20, 30, 180); // Justify the transcript
+  yOffset += 10; // Add space after transcript
+
+  if (yOffset > 280) {
+    doc.addPage();
+    yOffset = 20;
+  }
+
+  // Keypoints Section
+  doc.setFontSize(20);
+  doc.text("Key Points", 20, yOffset);
+  yOffset += 10;
+
+  doc.setFontSize(12);
+  keypoints.forEach((keypoint: any, index: number) => {
+
+    const title = `${index + 1}. ${keypoint.point}:`;
+    doc.setFont("helvetica", "bold");
+    doc.text("" , 20 ,5)
+    doc.text(title, 20, yOffset);
+    yOffset += 6;
+
+    // Justify the keypoint description
+    doc.setFont("helvetica", "normal");
+    yOffset = justifyText(keypoint.description, doc, 25, yOffset, 175);
+    yOffset += 4; // Add space between keypoints
+
+    if (yOffset > 280) {
+      doc.addPage();
+      yOffset = 20;
+    }
+  });
+
+  doc.save("transcription.pdf");
+};
+
+// Function to justify text and return the new Y position
+const justifyText = (text: string, doc: any, x: number, y: number, maxWidth: number) => {
+  const words = text.split(' ');
+  let line = '';
+  let lineY = y;
+  
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i] + ' ';
+    const testWidth = doc.getStringUnitWidth(testLine) * doc.internal.getFontSize() / doc.internal.scaleFactor;
+    
+    if (testWidth > maxWidth && i > 0) {
+      // Justify this line (except last line)
+      if (i < words.length - 1) {
+        const lineWords = line.trim().split(' ');
+        if (lineWords.length > 1) {
+          const spaceWidth = (maxWidth - doc.getStringUnitWidth(line.trim()) * doc.internal.getFontSize() / doc.internal.scaleFactor) / (lineWords.length - 1);
+          let xOffset = x;
+          
+          lineWords.forEach((word, index) => {
+            doc.text(word, xOffset, lineY);
+            if (index < lineWords.length - 1) {
+              xOffset += doc.getStringUnitWidth(word + ' ') * doc.internal.getFontSize() / doc.internal.scaleFactor + spaceWidth;
+            }
+          });
+        } else {
+          doc.text(line.trim(), x, lineY);
+        }
+      } else {
+        // Last line is left-aligned
+        doc.text(line.trim(), x, lineY);
+      }
+      
+      line = words[i] + ' ';
+      lineY += 6; // Line height
+      
+      if (lineY > 280) {
+        doc.addPage();
+        lineY = 20;
+      }
+    } else {
+      line = testLine;
+    }
+  }
+  
+  // Output the last line (left-aligned)
+  if (line.trim() !== '') {
+    doc.text(line.trim(), x, lineY);
+  }
+  
+  return lineY; // Return the new Y position
+};
+
+
+
+
   return (
     <div className="h-screen w-screen bg-gradient-to-b from-blue-950 to-black flex flex-col overflow-hidden relative">
       {/* Particles */}
@@ -349,6 +451,7 @@ const WhisperTranscription: React.FC = () => {
                         ))}
                       </tbody>
                     </table>
+                    <button className='bg-black m-5 p-5 rounded' onClick={() => generatePDF(res.transcription, res.keypoints)}>Download PDF</button>
                   </div>
                 </div>
               </div>
