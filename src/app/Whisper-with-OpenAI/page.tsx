@@ -1,12 +1,11 @@
 "use client";
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Mic, Waves } from 'lucide-react';
-import GloomyAudioPlayer from './Whisper-with-OpenAI/audioPlayer';
+import GloomyAudioPlayer from './audioPlayer';
 import { Play, Pause } from 'lucide-react';
 // import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import jsPDF from 'jspdf';
-import LandingPage from './Landing Page/Landing Page';
+
 
 interface ResponseInterface {
   base64: string;
@@ -372,119 +371,118 @@ const justifyText = (text: string, doc: any, x: number, y: number, maxWidth: num
 
 
   return (
-    <LandingPage />
-    // <div className="h-screen w-screen bg-gradient-to-b from-blue-950 to-black flex flex-col overflow-hidden relative">
-    //   {/* Particles */}
-    //   <div className="absolute inset-0 overflow-hidden pointer-events-none">
-    //     {particles.map(particle => (
-    //       <div
-    //         key={particle.id}
-    //         className="absolute rounded-full bg-blue-100"
-    //         style={{
-    //           left: `${particle.x}%`,
-    //           top: `${particle.y}%`,
-    //           width: `${particle.size}px`,
-    //           height: `${particle.size}px`,
-    //           opacity: particle.opacity,
-    //           boxShadow: `0 0 ${particle.size * 2}px ${particle.size}px rgba(59, 130, 246, 0.8)`
-    //         }}
-    //       />
-    //     ))}
-    //   </div>
+    <div className="h-screen w-screen bg-gradient-to-b from-blue-950 to-black flex flex-col overflow-hidden relative">
+      {/* Particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {particles.map(particle => (
+          <div
+            key={particle.id}
+            className="absolute rounded-full bg-blue-100"
+            style={{
+              left: `${particle.x}%`,
+              top: `${particle.y}%`,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              opacity: particle.opacity,
+              boxShadow: `0 0 ${particle.size * 2}px ${particle.size}px rgba(59, 130, 246, 0.8)`
+            }}
+          />
+        ))}
+      </div>
 
-    //   {/* Header */}
-    //   <header className="w-full p-6 bg-blue-950 bg-opacity-10 backdrop-blur-sm border-b border-blue-400 text-white shadow-xl z-10 flex-shrink-0">
-    //     <div className="container mx-auto flex items-center">
-    //       <Mic className="mr-4 text-blue-300" size={40} />
-    //       <h1 className="text-3xl font-extrabold tracking-wide text-white">
-    //         Whisper Transcription
-    //       </h1>
-    //     </div>
-    //   </header>
+      {/* Header */}
+      <header className="w-full p-6 bg-blue-950 bg-opacity-10 backdrop-blur-sm border-b border-blue-400 text-white shadow-xl z-10 flex-shrink-0">
+        <div className="container mx-auto flex items-center">
+          <Mic className="mr-4 text-blue-300" size={40} />
+          <h1 className="text-3xl font-extrabold tracking-wide text-white">
+            Whisper Transcription
+          </h1>
+        </div>
+      </header>
 
-    //   {/* Conversation Container - Now with flex-grow and overflow-y-auto */}
-    //   <main className="flex-grow flex flex-col w-full px-4 py-6 overflow-y-auto scrollbar-pretty z-10">
-    //     <div className="space-y-6 min-h-min">
-    //       {/* Initial Whisper Message */}
-    //       <div className="w-full mx-auto">
-    //         <div className="bg-blue-900 bg-opacity-30 text-white p-6 rounded-xl shadow-xl border border-blue-400 shadow-blue-500/30 backdrop-blur-sm">
-    //           <div className="flex items-center mb-4">
-    //             <Mic className="mr-3 text-blue-200" size={30} />
-    //             <span className="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">Whisper AI</span>
-    //           </div>
-    //           <p className="text-blue-100">
-    //             Upload an audio file, and I'll transcribe it for you.
-    //           </p>
-    //         </div>
-    //       </div>
+      {/* Conversation Container - Now with flex-grow and overflow-y-auto */}
+      <main className="flex-grow flex flex-col w-full px-4 py-6 overflow-y-auto scrollbar-pretty z-10">
+        <div className="space-y-6 min-h-min">
+          {/* Initial Whisper Message */}
+          <div className="w-full mx-auto">
+            <div className="bg-blue-900 bg-opacity-30 text-white p-6 rounded-xl shadow-xl border border-blue-400 shadow-blue-500/30 backdrop-blur-sm">
+              <div className="flex items-center mb-4">
+                <Mic className="mr-3 text-blue-200" size={30} />
+                <span className="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">Whisper AI</span>
+              </div>
+              <p className="text-blue-100">
+                Upload an audio file, and I'll transcribe it for you.
+              </p>
+            </div>
+          </div>
 
-    //       {/* Uploaded Audio Responses */}
-    //       {response.map((res, index) => (
-    //         res.role === "user" ?
-    //           <div key={index} className="flex justify-end w-full">
-    //             <div className="w-3/5">
-    //               <GloomyAudioPlayer audioSource={res.base64 || ''} />
-    //             </div>
-    //           </div>
-    //           :
-    //           <div key={index} className="flex justify-start w-full">
-    //             <div className="w-3/5 bg-blue-900 bg-opacity-30 text-white p-6 rounded-xl shadow-xl border border-blue-400 shadow-blue-500/30 backdrop-blur-sm">
-    //               <div className="flex flex-col items-start mb-4">
-    //                 <h1 className="text-blue-200 text-3xl font-bold mb-2">Transcript</h1>
-    //                 <span className="flex w-full flex-end rounded font-bold text-xl bg-blue-950 bg-opacity-70 text-blue-100 p-5 border border-blue-500">
-    //                   {res.transcription}
-    //                 </span>
-    //               </div>
-    //               <div className="flex flex-col items-start mb-4">
-    //                 <h1 className="text-blue-200 text-3xl font-bold mb-2">Key Points</h1>
-    //                 <table className="w-full border-collapse border bg-gray-900 rounded-lg overflow-hidden shadow-lg">
-    //                   <thead>
-    //                     <tr className="bg-gray-700 border-b border-gray-600 opacity-100">
-    //                       <th className="text-white text-xl font-bold p-4 text-left border-gray-900 border-r">Key Points</th>
-    //                       <th className="text-white text-xl font-bold p-4 text-left">Description</th>
-    //                     </tr>
-    //                   </thead>
-    //                   <tbody>
-    //                     {res.keypoints.map((keypoint: any, i: number) => (
-    //                       <tr key={i} className={i % 2 === 0 ? "bg-gray-800" : "bg-gray-750 opacity-100"}>
-    //                         <td className="text-blue-100 p-4 border-t border-gray-700 border-r">{keypoint.point}</td>
-    //                         <td className="text-blue-100 p-4 border-t border-gray-700">{keypoint.description}</td>
-    //                       </tr>
-    //                     ))}
-    //                   </tbody>
-    //                 </table>
-    //                 <button className='bg-black m-5 p-5 rounded' onClick={() => generatePDF(res.transcription, res.keypoints)}>Download PDF</button>
-    //               </div>
-    //             </div>
-    //           </div>
-    //       ))}
-    //     </div>
-    //   </main>
+          {/* Uploaded Audio Responses */}
+          {response.map((res, index) => (
+            res.role === "user" ?
+              <div key={index} className="flex justify-end w-full">
+                <div className="w-3/5">
+                  <GloomyAudioPlayer audioSource={res.base64 || ''} />
+                </div>
+              </div>
+              :
+              <div key={index} className="flex justify-start w-full">
+                <div className="w-3/5 bg-blue-900 bg-opacity-30 text-white p-6 rounded-xl shadow-xl border border-blue-400 shadow-blue-500/30 backdrop-blur-sm">
+                  <div className="flex flex-col items-start mb-4">
+                    <h1 className="text-blue-200 text-3xl font-bold mb-2">Transcript</h1>
+                    <span className="flex w-full flex-end rounded font-bold text-xl bg-blue-950 bg-opacity-70 text-blue-100 p-5 border border-blue-500">
+                      {res.transcription}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-start mb-4">
+                    <h1 className="text-blue-200 text-3xl font-bold mb-2">Key Points</h1>
+                    <table className="w-full border-collapse border bg-gray-900 rounded-lg overflow-hidden shadow-lg">
+                      <thead>
+                        <tr className="bg-gray-700 border-b border-gray-600 opacity-100">
+                          <th className="text-white text-xl font-bold p-4 text-left border-gray-900 border-r">Key Points</th>
+                          <th className="text-white text-xl font-bold p-4 text-left">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {res.keypoints.map((keypoint: any, i: number) => (
+                          <tr key={i} className={i % 2 === 0 ? "bg-gray-800" : "bg-gray-750 opacity-100"}>
+                            <td className="text-blue-100 p-4 border-t border-gray-700 border-r">{keypoint.point}</td>
+                            <td className="text-blue-100 p-4 border-t border-gray-700">{keypoint.description}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <button className='bg-black m-5 p-5 rounded cursor-pointer hover:bg-white hover:text-black transition duration-300 ease-in-out' onClick={() => generatePDF(res.transcription, res.keypoints)}>Download PDF</button>
+                  </div>
+                </div>
+              </div>
+          ))}
+        </div>
+      </main>
 
-    //   {/* File Upload Section - Now with position fixed */}
-    //   <footer className="w-full p-4 bg-blue-950 bg-opacity-70 backdrop-blur-sm border-t border-blue-400 z-10 flex-shrink-0">
-    //     <div className="container mx-auto flex justify-center">
-    //       <label className="flex items-center justify-center w-full max-w-md px-2 py-4 bg-blue-800 text-white rounded-xl cursor-pointer hover:bg-blue-700 transition-colors duration-300 shadow-xl shadow-blue-500/30 border border-blue-400">
-    //         <Upload className="mr-3 text-blue-200" size={24} />
-    //         <span className="text-lg font-semibold">Upload Audio File</span>
-    //         <input
-    //           type="file"
-    //           accept="audio/*"
-    //           className="hidden"
-    //           onChange={handleAudioUpload}
-    //         />
-    //       </label>
-    //       <div className="m-4 ">
-    //         <button
-    //           onClick={togglePlay}
-    //           className="bg-blue-800 hover:bg-blue-700 text-white p-2 rounded-full w-10 h-10 flex items-center justify-center transition-colors cursor-pointer"
-    //         >
-    //           {isPlaying ? <Pause size={20} onClick={stopRecording} /> : <Play size={20} onClick={startRecording} />}
-    //         </button>
-    //       </div>
-    //     </div>
-    //   </footer>
-    // </div>
+      {/* File Upload Section - Now with position fixed */}
+      <footer className="w-full p-4 bg-blue-950 bg-opacity-70 backdrop-blur-sm border-t border-blue-400 z-10 flex-shrink-0">
+        <div className="container mx-auto flex justify-center">
+          <label className="flex items-center justify-center w-full max-w-md px-2 py-4 bg-blue-800 text-white rounded-xl cursor-pointer hover:bg-blue-700 transition-colors duration-300 shadow-xl shadow-blue-500/30 border border-blue-400">
+            <Upload className="mr-3 text-blue-200" size={24} />
+            <span className="text-lg font-semibold">Upload Audio File</span>
+            <input
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={handleAudioUpload}
+            />
+          </label>
+          <div className="m-4 ">
+            <button
+              onClick={togglePlay}
+              className="bg-blue-800 hover:bg-blue-700 text-white p-2 rounded-full w-10 h-10 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              {isPlaying ? <Pause size={20} onClick={stopRecording} /> : <Play size={20} onClick={startRecording} />}
+            </button>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 };
 
