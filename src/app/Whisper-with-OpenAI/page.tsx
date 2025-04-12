@@ -30,7 +30,7 @@ const WhisperTranscription: React.FC = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [duration, setDuration] = useState<number>(0)
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [keypoints, setkeypoints] = useState<object[]>([])
+  
 
 
   // Generate Particles
@@ -110,11 +110,14 @@ const WhisperTranscription: React.FC = () => {
       JSON.parse(str);
       return str;
     } catch (e) {
+      if (e instanceof Error) {
+        console.log("First parsing attempt failed, trying more cleanup:", e.message);
+      }
       // Not valid JSON yet, continue with cleaning
     }
 
     // Try to clean the string more aggressively
-    let cleaned = str
+    const cleaned = str
       .replace(/^\s*```json\s*/, '')  // Remove starting ```json
       .replace(/\s*```\s*$/, '')      // Remove ending ```
       .trim();                        // Remove extra whitespace
@@ -408,7 +411,7 @@ const WhisperTranscription: React.FC = () => {
                 <span className="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">Whisper AI</span>
               </div>
               <p className="text-blue-100">
-                Upload an audio file, and I'll transcribe it for you.
+                Upload an audio file, and I&apos;ll transcribe it for you.
               </p>
             </div>
           </div>
@@ -477,7 +480,7 @@ const WhisperTranscription: React.FC = () => {
               onClick={togglePlay}
               className="bg-blue-800 hover:bg-blue-700 text-white p-2 rounded-full w-10 h-10 flex items-center justify-center transition-colors cursor-pointer"
             >
-              {isPlaying ? <Pause size={20} onClick={stopRecording} /> : <Play size={20} onClick={startRecording} />}
+              {isRecording ? <Pause size={20} onClick={stopRecording} /> : <Play size={20} onClick={startRecording} />}
             </button>
           </div>
         </div>
