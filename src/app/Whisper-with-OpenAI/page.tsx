@@ -28,7 +28,9 @@ const WhisperTranscription: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  // const ffmpeg = createFFmpeg({ log: true });
+  const [duration , setDuration] =useState<number>(0)
+  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
 
   // Generate Particles
   useEffect(() => {
@@ -125,7 +127,10 @@ const WhisperTranscription: React.FC = () => {
       // Try direct parsing first
       return JSON.parse(jsonStr);
     } catch (firstError) {
-      console.log("First parsing attempt failed, trying more cleanup:", firstError.message);
+      if (firstError instanceof Error) {
+        console.log("First parsing attempt failed, trying more cleanup:", firstError.message);
+      }
+      
 
       try {
         // Try to fix common issues
@@ -177,21 +182,11 @@ const WhisperTranscription: React.FC = () => {
       setResponse(response => [...response, data.response]);
 
     } catch (error) {
-      console.error("Error:", error.message);
+      if (error instanceof Error) {
+        console.error("Error:", error.message);
+      }
     }
   }
-
-  // Convert Blob to Base64
-  // const convertBlobToBase64 = (blob: Blob): Promise<string> => {
-  //   return new Promise((resolve) => {
-  //     const reader = new FileReader();
-  //     reader.readAsDataURL(blob);
-  //     reader.onloadend = () => {
-  //       resolve(reader.result as string);
-  //     };
-  //   });
-  // };
-
   // Start Recording
   const startRecording = async () => {
     try {
@@ -206,6 +201,11 @@ const WhisperTranscription: React.FC = () => {
       };
 
       mediaRecorder.onstop = async () => {
+        if (durationIntervalRef.current) {
+          clearInterval(durationIntervalRef.current);
+        }
+
+        const finalDuration = duration;
         const audioBlob = new Blob(chunks, { type: "audio/mpeg" });
         console.log(audioBlob);
 
@@ -216,12 +216,18 @@ const WhisperTranscription: React.FC = () => {
         // const base64String = await convertBlobToBase64(audioBlob);
         const base64String = await convertToBase64(audioFile);
         setAudioFile(base64String);
-        setResponse(prevResponse => [...prevResponse, { base64: base64String, role: "user", transcription: "", keypoints: "" }]);
+        setResponse(prevResponse => [...prevResponse, { base64: base64String, role: "user", transcription: "", keypoints: "" , duration: finalDuration,}]);
+        setDuration(0); // Reset duration
       };
 
       mediaRecorder.start();
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
+
+          // Start duration timer (0.1s intervals)
+    durationIntervalRef.current = setInterval(() => {
+      setDuration((prevDuration) => +(prevDuration + 0.1).toFixed(1));
+    }, 100);
     } catch (error) {
       console.error("Error accessing microphone:", error);
     }
@@ -232,25 +238,13 @@ const WhisperTranscription: React.FC = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+
+      if (durationIntervalRef.current) {
+        clearInterval(durationIntervalRef.current);
+        durationIntervalRef.current = null;
+      }
     }
   };
-
-  // convert blob to mp3
-  // const convertToMP3 = async (audioBlob: Blob) => {
-  //   if (!ffmpeg.isLoaded()) await ffmpeg.load();
-
-  //   const inputFile = "input.webm";
-  //   const outputFile = "output.mp3";
-
-  //   ffmpeg.FS("writeFile", inputFile, await fetchFile(audioBlob));
-  //   await ffmpeg.run("-i", inputFile, outputFile);
-  //   const mp3Data = ffmpeg.FS("readFile", outputFile);
-
-  //   const mp3Blob = new Blob([mp3Data.buffer], { type: "audio/mp3" });
-  //   return URL.createObjectURL(mp3Blob);
-  // };
-
-
   //Send Data to API when audio file Changes
   useEffect(() => {
     if (audioFile) {
@@ -268,104 +262,106 @@ const WhisperTranscription: React.FC = () => {
     setIsPlaying(!isPlaying);
   };
 
+  
   //Generate pdf
 
-//Generate PDF with justified text
-const generatePDF = (transcript: string, keypoints: any[]) => {
-  console.log("Generating PDF...");
-  const doc = new jsPDF();
+  //Generate PDF with justified text
+  const generatePDF = (transcript: string, keypoints: any[]) => {
+    console.log("KEYPOINTS: "  , keypoints)
+    console.log("Generating PDF...");
+    const doc = new jsPDF();
 
-  doc.setFontSize(20);
-  doc.text("Transcription", 20, 20);
+    doc.setFontSize(20);
+    doc.text("Transcription", 20, 20);
 
-  doc.setFontSize(12);
-  let yOffset = justifyText(transcript, doc, 20, 30, 180); // Justify the transcript
-  yOffset += 10; // Add space after transcript
-
-  if (yOffset > 280) {
-    doc.addPage();
-    yOffset = 20;
-  }
-
-  // Keypoints Section
-  doc.setFontSize(20);
-  doc.text("Key Points", 20, yOffset);
-  yOffset += 10;
-
-  doc.setFontSize(12);
-  keypoints.forEach((keypoint: any, index: number) => {
-
-    const title = `${index + 1}. ${keypoint.point}:`;
-    doc.setFont("helvetica", "bold");
-    doc.text("" , 20 ,5)
-    doc.text(title, 20, yOffset);
-    yOffset += 6;
-
-    // Justify the keypoint description
-    doc.setFont("helvetica", "normal");
-    yOffset = justifyText(keypoint.description, doc, 25, yOffset, 175);
-    yOffset += 4; // Add space between keypoints
+    doc.setFontSize(12);
+    let yOffset = justifyText(transcript, doc, 20, 30, 180); // Justify the transcript
+    yOffset += 10; // Add space after transcript
 
     if (yOffset > 280) {
       doc.addPage();
       yOffset = 20;
     }
-  });
 
-  doc.save("transcription.pdf");
-};
+    // Keypoints Section
+    doc.setFontSize(20);
+    doc.text("Key Points", 20, yOffset);
+    yOffset += 10;
 
-// Function to justify text and return the new Y position
-const justifyText = (text: string, doc: any, x: number, y: number, maxWidth: number) => {
-  const words = text.split(' ');
-  let line = '';
-  let lineY = y;
-  
-  for (let i = 0; i < words.length; i++) {
-    const testLine = line + words[i] + ' ';
-    const testWidth = doc.getStringUnitWidth(testLine) * doc.internal.getFontSize() / doc.internal.scaleFactor;
-    
-    if (testWidth > maxWidth && i > 0) {
-      // Justify this line (except last line)
-      if (i < words.length - 1) {
-        const lineWords = line.trim().split(' ');
-        if (lineWords.length > 1) {
-          const spaceWidth = (maxWidth - doc.getStringUnitWidth(line.trim()) * doc.internal.getFontSize() / doc.internal.scaleFactor) / (lineWords.length - 1);
-          let xOffset = x;
-          
-          lineWords.forEach((word, index) => {
-            doc.text(word, xOffset, lineY);
-            if (index < lineWords.length - 1) {
-              xOffset += doc.getStringUnitWidth(word + ' ') * doc.internal.getFontSize() / doc.internal.scaleFactor + spaceWidth;
-            }
-          });
+    doc.setFontSize(12);
+    keypoints.forEach((keypoint: any, index: number) => {
+
+      const title = `${index + 1}. ${keypoint.point}:`;
+      doc.setFont("helvetica", "bold");
+      doc.text("", 20, 5)
+      doc.text(title, 20, yOffset);
+      yOffset += 6;
+
+      // Justify the keypoint description
+      doc.setFont("helvetica", "normal");
+      yOffset = justifyText(keypoint.description, doc, 25, yOffset, 175);
+      yOffset += 4; // Add space between keypoints
+
+      if (yOffset > 280) {
+        doc.addPage();
+        yOffset = 20;
+      }
+    });
+
+    doc.save("transcription.pdf");
+  };
+
+  // Function to justify text and return the new Y position
+  const justifyText = (text: string, doc: any, x: number, y: number, maxWidth: number) => {
+    const words = text.split(' ');
+    let line = '';
+    let lineY = y;
+
+    for (let i = 0; i < words.length; i++) {
+      const testLine = line + words[i] + ' ';
+      const testWidth = doc.getStringUnitWidth(testLine) * doc.internal.getFontSize() / doc.internal.scaleFactor;
+
+      if (testWidth > maxWidth && i > 0) {
+        // Justify this line (except last line)
+        if (i < words.length - 1) {
+          const lineWords = line.trim().split(' ');
+          if (lineWords.length > 1) {
+            const spaceWidth = (maxWidth - doc.getStringUnitWidth(line.trim()) * doc.internal.getFontSize() / doc.internal.scaleFactor) / (lineWords.length - 1);
+            let xOffset = x;
+
+            lineWords.forEach((word, index) => {
+              doc.text(word, xOffset, lineY);
+              if (index < lineWords.length - 1) {
+                xOffset += doc.getStringUnitWidth(word + ' ') * doc.internal.getFontSize() / doc.internal.scaleFactor + spaceWidth;
+              }
+            });
+          } else {
+            doc.text(line.trim(), x, lineY);
+          }
         } else {
+          // Last line is left-aligned
           doc.text(line.trim(), x, lineY);
         }
+
+        line = words[i] + ' ';
+        lineY += 6; // Line height
+
+        if (lineY > 280) {
+          doc.addPage();
+          lineY = 20;
+        }
       } else {
-        // Last line is left-aligned
-        doc.text(line.trim(), x, lineY);
+        line = testLine;
       }
-      
-      line = words[i] + ' ';
-      lineY += 6; // Line height
-      
-      if (lineY > 280) {
-        doc.addPage();
-        lineY = 20;
-      }
-    } else {
-      line = testLine;
     }
-  }
-  
-  // Output the last line (left-aligned)
-  if (line.trim() !== '') {
-    doc.text(line.trim(), x, lineY);
-  }
-  
-  return lineY; // Return the new Y position
-};
+
+    // Output the last line (left-aligned)
+    if (line.trim() !== '') {
+      doc.text(line.trim(), x, lineY);
+    }
+
+    return lineY; // Return the new Y position
+  };
 
 
 
@@ -421,7 +417,7 @@ const justifyText = (text: string, doc: any, x: number, y: number, maxWidth: num
             res.role === "user" ?
               <div key={index} className="flex justify-end w-full">
                 <div className="w-3/5">
-                  <GloomyAudioPlayer audioSource={res.base64 || ''} />
+                  <GloomyAudioPlayer audioSource={res.base64 || ''} audioDuration={duration}/>
                 </div>
               </div>
               :

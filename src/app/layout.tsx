@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "WhisperAI",
   description: "Your AI transcriber",
+  icons:{
+    icon: "./images.png"
+  }
 };
 
 export default function RootLayout({

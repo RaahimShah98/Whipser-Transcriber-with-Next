@@ -4,12 +4,13 @@ import { Play, Pause } from 'lucide-react';
 
 interface GloomyAudioPlayerProps {
   audioSource: string;
+  audioDuration:number
 }
 
-const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ audioSource }) => {
+const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ audioSource , audioDuration }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState(audioDuration);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressBarRef = useRef<HTMLDivElement | null>(null);
 
@@ -19,6 +20,7 @@ const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ audioSource }) =>
     
     const setAudioData = () => {
       setDuration(audio.duration);
+      console.log(audio.duration)
     };
     
     const setAudioTime = () => {
@@ -82,9 +84,9 @@ const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ audioSource }) =>
       <div className="flex items-center gap-4 mb-3">
         <button 
           onClick={togglePlay}
-          className="bg-blue-800 hover:bg-purple-700 text-white p-2 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+          className="bg-blue-800 hover:bg-black text-white p-2 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
         >
-          {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+          {isPlaying ? <Pause  size={20} /> : <Play size={20} />}
         </button>
         
         <div className="text-gray-300 text-sm">
