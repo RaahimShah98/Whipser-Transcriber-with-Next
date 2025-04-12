@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload, Mic, Waves } from 'lucide-react';
+import { Upload, Mic } from 'lucide-react';
 import GloomyAudioPlayer from './audioPlayer';
 import { Play, Pause } from 'lucide-react';
 // import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
@@ -28,9 +28,10 @@ const WhisperTranscription: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const [duration , setDuration] =useState<number>(0)
+  const [duration, setDuration] = useState<number>(0)
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+  const [keypoints, setkeypoints] = useState<object[]>([])
+
 
   // Generate Particles
   useEffect(() => {
@@ -130,7 +131,7 @@ const WhisperTranscription: React.FC = () => {
       if (firstError instanceof Error) {
         console.log("First parsing attempt failed, trying more cleanup:", firstError.message);
       }
-      
+
 
       try {
         // Try to fix common issues
@@ -216,7 +217,7 @@ const WhisperTranscription: React.FC = () => {
         // const base64String = await convertBlobToBase64(audioBlob);
         const base64String = await convertToBase64(audioFile);
         setAudioFile(base64String);
-        setResponse(prevResponse => [...prevResponse, { base64: base64String, role: "user", transcription: "", keypoints: "" , duration: finalDuration,}]);
+        setResponse(prevResponse => [...prevResponse, { base64: base64String, role: "user", transcription: "", keypoints: "", duration: finalDuration, }]);
         setDuration(0); // Reset duration
       };
 
@@ -224,10 +225,10 @@ const WhisperTranscription: React.FC = () => {
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
 
-          // Start duration timer (0.1s intervals)
-    durationIntervalRef.current = setInterval(() => {
-      setDuration((prevDuration) => +(prevDuration + 0.1).toFixed(1));
-    }, 100);
+      // Start duration timer (0.1s intervals)
+      durationIntervalRef.current = setInterval(() => {
+        setDuration((prevDuration) => +(prevDuration + 0.1).toFixed(1));
+      }, 100);
     } catch (error) {
       console.error("Error accessing microphone:", error);
     }
@@ -262,12 +263,12 @@ const WhisperTranscription: React.FC = () => {
     setIsPlaying(!isPlaying);
   };
 
-  
+
   //Generate pdf
 
   //Generate PDF with justified text
   const generatePDF = (transcript: string, keypoints: any[]) => {
-    console.log("KEYPOINTS: "  , keypoints)
+    console.log("KEYPOINTS: ", keypoints)
     console.log("Generating PDF...");
     const doc = new jsPDF();
 
@@ -417,7 +418,7 @@ const WhisperTranscription: React.FC = () => {
             res.role === "user" ?
               <div key={index} className="flex justify-end w-full">
                 <div className="w-3/5">
-                  <GloomyAudioPlayer audioSource={res.base64 || ''} audioDuration={duration}/>
+                  <GloomyAudioPlayer audioSource={res.base64 || ''} audioDuration={duration} />
                 </div>
               </div>
               :
@@ -439,15 +440,18 @@ const WhisperTranscription: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {res.keypoints.map((keypoint: any, i: number) => (
-                          <tr key={i} className={i % 2 === 0 ? "bg-gray-800" : "bg-gray-750 opacity-100"}>
-                            <td className="text-blue-100 p-4 border-t border-gray-700 border-r">{keypoint.point}</td>
-                            <td className="text-blue-100 p-4 border-t border-gray-700">{keypoint.description}</td>
-                          </tr>
-                        ))}
+                        {
+                          res.keypoints.map((keypoint: any, i: number) => (
+                            <tr key={i} className={i % 2 === 0 ? "bg-gray-800" : "bg-gray-750 opacity-100"}>
+                              <td className="text-blue-100 p-4 border-t border-gray-700 border-r">{keypoint.point}</td>
+                              <td className="text-blue-100 p-4 border-t border-gray-700">{keypoint.description}</td>
+                            </tr>
+                          ))
+                        }
+
                       </tbody>
                     </table>
-                    <button className='bg-black m-5 p-5 rounded cursor-pointer hover:bg-white hover:text-black transition duration-300 ease-in-out' onClick={() => generatePDF(res.transcription, res.keypoints)}>Download PDF</button>
+                    <button className='bg-black m-5 p-5 rounded cursor-pointer hover:bg-white hover:text-black transition duration-300 ease-in-out' onClick={() => generatePDF(res.transcription, Object.entries(res.keypoints))}>Download PDF</button>
                   </div>
                 </div>
               </div>

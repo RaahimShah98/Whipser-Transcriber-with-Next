@@ -1,7 +1,6 @@
 // pages/index.tsx
 import { useEffect, useRef } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 import * as THREE from 'three';
 
 export function LandingPage() {

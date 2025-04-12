@@ -44,8 +44,10 @@ const initializeAssistant = async () => {
         return assistant.id
 
     } catch (e) {
-        console.log("ASSITANT ERROR: ", e.message)
-        return null;
+        if (e instanceof Error) {
+            console.log("ASSITANT ERROR: ", e.message)
+            return null;
+        }
     }
 }
 
@@ -76,8 +78,10 @@ const temp_save_to_mp3 = async (file: Base64URLString) => {
         fs.writeFileSync(filePath, buffer);
         return filePath;
     } catch (e) {
-        console.log("TEMP FILE ERROR: ", e.message)
-        return null;
+        if (e instanceof Error) {
+            console.log("TEMP FILE ERROR: ", e.message)
+            return null;
+        }
     }
 }
 
@@ -102,8 +106,10 @@ const reading_mp3 = async () => {
 
         return path.join(tempDir, files[0].name); // Return the latest MP3 file
     } catch (e) {
-        console.log("READING MP3 ERROR: ", e.message)
-        return null;
+        if (e instanceof Error) {
+            console.log("READING MP3 ERROR: ", e.message)
+            return null;
+        }
     }
 
 };
@@ -140,8 +146,10 @@ const transcribeAudio = async (filePath: string) => {
         };
     }
     catch (e) {
-        console.log("TRANSCRIPTION ERROR: ", e.message);
-        return { statusCode: 500, message: e.message, filePath: filePath };
+        if (e instanceof Error) {
+            console.log("TRANSCRIPTION ERROR: ", e.message);
+            return { statusCode: 500, message: e.message, filePath: filePath };
+        }
     }
 }
 
@@ -156,7 +164,9 @@ const get_response_from_assitant = async (message: string) => {
             role: "user",
             content: message
         })
-
+        if (!ASSITANT_ID || !threadId) {
+            throw new Error("Assistant ID or Thread ID is undefined!");
+        }
         const run = await openAI.beta.threads.runs.create(threadId, {
             assistant_id: ASSITANT_ID,
         })
@@ -209,8 +219,10 @@ const get_response_from_assitant = async (message: string) => {
             return null;
         }
     } catch (error) {
-        console.error("Error getting assistant response:", error.message);
-        return null;
+        if (error instanceof Error) {
+            console.error("Error getting assistant response:", error.message);
+            return null;
+        }
     }
 }
 
@@ -222,7 +234,9 @@ const delete_temp_file = async (filePath: string) => {
             console.log(`Deleted temporary file: ${filePath}`);
         }
     } catch (error) {
-        console.error("Error deleting file:", error.message);
+        if (error instanceof Error) {
+            console.error("Error deleting file:", error.message);
+        }
     }
 };
 
