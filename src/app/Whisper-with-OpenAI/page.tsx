@@ -14,6 +14,11 @@ interface ResponseInterface {
   keypoints: string;
 }
 
+interface Keypoint {
+  point: string;
+  description: string;
+}
+
 const WhisperTranscription: React.FC = () => {
   const [audioFile, setAudioFile] = useState<string | null>(null);
   const [response, setResponse] = useState<ResponseInterface[]>([]);
@@ -30,7 +35,7 @@ const WhisperTranscription: React.FC = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [duration, setDuration] = useState<number>(0)
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+  const [keypoints , setKeypoints] = useState<Keypoint[]>([])
 
 
   // Generate Particles
@@ -180,10 +185,11 @@ const WhisperTranscription: React.FC = () => {
       // console.log("Extracted JSON string:", extractedJson);
 
       const formatData = convertToJsObject(extractedJson);
-      // console.log("FORMATTED: ", formatData);
-      data.response.keypoints = formatData.keypoints;
+      console.log("FORMATTED: ", formatData);
+      data.response.keypoints = [formatData.keypoints];
 
       setResponse(response => [...response, data.response]);
+      setKeypoints(formatData.keypoints)
 
     } catch (error) {
       if (error instanceof Error) {
@@ -260,6 +266,13 @@ const WhisperTranscription: React.FC = () => {
   useEffect(() => {
     console.log("IN EFFECT: ", response)
   }, [response])
+
+  useEffect(() => {
+    if (keypoints) {
+      console.log("IN EFFECT KEYPOINTS: ", keypoints)
+    }
+    
+  }, [keypoints])
 
 
   const togglePlay = () => {
@@ -444,7 +457,7 @@ const WhisperTranscription: React.FC = () => {
                       </thead>
                       <tbody>
                         {
-                          res.keypoints.map((keypoint: any, i: number) => (
+                          Array.isArray(keypoints) && keypoints.map((keypoint, i) => (
                             <tr key={i} className={i % 2 === 0 ? "bg-gray-800" : "bg-gray-750 opacity-100"}>
                               <td className="text-blue-100 p-4 border-t border-gray-700 border-r">{keypoint.point}</td>
                               <td className="text-blue-100 p-4 border-t border-gray-700">{keypoint.description}</td>
