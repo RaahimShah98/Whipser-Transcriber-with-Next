@@ -61,29 +61,51 @@ initializeAssistant().then((assistantId) => {
 });
 
 // save temporarily to mp3
+// const temp_save_to_mp3 = async (file: Base64URLString) => {
+//     try {
+//         console.log("SAVING FILE: ")
+//         // const buffer = Buffer.from(file, 'base64');
+//         const base64Data = file.includes('base64,')
+//             ? file.split('base64,')[1]
+//             : file;
+
+//         const buffer = Buffer.from(base64Data, 'base64');
+//         const tempDir = path.join(process.cwd(), 'temp');
+//         if (!fs.existsSync(tempDir)) {
+//             fs.mkdirSync(tempDir);
+//         }
+//         const filePath = path.join(tempDir, `audio-${Date.now()}.mp3`);
+//         fs.writeFileSync(filePath, buffer);
+//         return filePath;
+//     } catch (e) {
+//         if (e instanceof Error) {
+//             console.log("TEMP FILE ERROR: ", e.message)
+//             return null;
+//         }
+//     }
+// }
+
 const temp_save_to_mp3 = async (file: Base64URLString) => {
     try {
-        console.log("SAVING FILE: ")
-        // const buffer = Buffer.from(file, 'base64');
+        console.log("SAVING FILE: ");
         const base64Data = file.includes('base64,')
             ? file.split('base64,')[1]
             : file;
 
         const buffer = Buffer.from(base64Data, 'base64');
-        const tempDir = path.join(process.cwd(), 'temp');
-        if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir);
-        }
+        const tempDir = '/tmp';  // <-- THIS is writable on Vercel.
+
         const filePath = path.join(tempDir, `audio-${Date.now()}.mp3`);
         fs.writeFileSync(filePath, buffer);
         return filePath;
     } catch (e) {
         if (e instanceof Error) {
-            console.log("TEMP FILE ERROR: ", e.message)
+            console.log("TEMP FILE ERROR: ", e.message);
             return null;
         }
     }
 }
+
 
 // Read mp3 file for transcription
 const reading_mp3 = async () => {
