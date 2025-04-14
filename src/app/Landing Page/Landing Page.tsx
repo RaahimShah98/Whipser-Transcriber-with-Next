@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import Head from 'next/head';
 import * as THREE from 'three';
 
+
 export function LandingPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -80,7 +81,7 @@ export function LandingPage() {
             <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full -z-10" />
 
             <div className="font-['Space_Grotesk'] text-white bg-transparent">
-                <header className="flex justify-between items-center py-8 fixed absolute z-50 bg-white/30 w-[100%] px-12 ">
+                <header className="flex justify-between items-center py-8 fixed absolute z-50 bg-white/30 w-[100%] px-12 mb-12 ">
                     <div className="flex items-center">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -103,16 +104,16 @@ export function LandingPage() {
                 </header>
 
                 <div className="min-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <section className="flex flex-col md:flex-row items-center justify-between py-24 md:py-32">
-                        <div className="max-w-2xl mb-16 md:mb-0 text-center md:text-left">
-                            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-purple-500 to-indigo-600 bg-clip-text text-transparent">
+                    <section className="flex flex-col md:flex-row items-center justify-center py-24 md:py-32 ">
+                        <div className="max-w-2xl mb-16 md:mb-0 text-center md:text-left mr-36">
+                            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-black text-purple-500  bg-clip-text ">
                                 Translate Audio Across the Universe
                             </h1>
-                            <p className="text-lg text-gray-300 mb-10">
+                            <p className="text-lg text-gray-300 mb-10 text-xl">
                                 Upload audio files or record your voice and instantly get accurate translations and key points extraction. Breaking language barriers with space-age technology.
                             </p>
                             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                                <a onClick={() => (window.location.href = "/Whisper-with-OpenAI")} className="px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full font-semibold text-white shadow-lg shadow-purple-500/30 hover:-translate-y-1 transition-all">
+                                <a onClick={() => (window.location.href = "/Whisper-with-OpenAI")} className="hover:cursor-pointer px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full font-semibold text-white shadow-lg shadow-purple-500/30 hover:-translate-y-1 transition-all">
                                     Try for Free
                                 </a>
                                 <a href="#how-it-works" className="px-8 py-4 border-2 border-gray-500 rounded-full font-semibold hover:border-purple-500 hover:text-purple-500 transition-all">
@@ -129,10 +130,10 @@ export function LandingPage() {
                     </section>
 
 
-                    <section id="features" className="py-24">
+                    <section id="features" className="py-12">
                         <div className="text-center mb-20">
                             <h2 className="text-4xl font-bold mb-5 bg-gradient-to-r from-white to-purple-500 bg-clip-text text-transparent">
-                                Stellar Features
+                                Audio Verse Features
                             </h2>
                             <p className="text-lg text-gray-300 max-w-2xl mx-auto">
                                 Discover the powerful capabilities that make AudioVerse the ultimate audio translation tool.
