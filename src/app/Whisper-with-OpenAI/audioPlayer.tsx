@@ -90,7 +90,7 @@ const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ audioSource , aud
         </button>
         
         <div className="text-gray-300 text-sm">
-          {formatTime(currentTime)} / {formatTime(duration)}
+          {formatTime(currentTime)}
         </div>
       </div>
       

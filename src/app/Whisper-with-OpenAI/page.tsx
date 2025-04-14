@@ -306,8 +306,10 @@ const WhisperTranscription: React.FC = () => {
     yOffset += 10;
 
     doc.setFontSize(12);
+    const points = keypoints[1]
+    console.log("POINTS:  " , points)
     keypoints.forEach((keypoint: any, index: number) => {
-
+      console.log(keypoint)
       const title = `${index + 1}. ${keypoint.point}:`;
       doc.setFont("helvetica", "bold");
       doc.text("", 20, 5)
@@ -316,7 +318,7 @@ const WhisperTranscription: React.FC = () => {
 
       // Justify the keypoint description
       doc.setFont("helvetica", "normal");
-      yOffset = justifyText(keypoint.description, doc, 25, yOffset, 175);
+      yOffset = justifyText(JSON.stringify(keypoint.description), doc, 25, yOffset, 175);
       yOffset += 4; // Add space between keypoints
 
       if (yOffset > 280) {
@@ -330,7 +332,9 @@ const WhisperTranscription: React.FC = () => {
 
   // Function to justify text and return the new Y position
   const justifyText = (text: string, doc: any, x: number, y: number, maxWidth: number) => {
+    console.log("TEXT: " , text)
     const words = text.split(' ');
+    console.log(words)
     let line = '';
     let lineY = y;
 
@@ -467,7 +471,7 @@ const WhisperTranscription: React.FC = () => {
 
                       </tbody>
                     </table>
-                    <button className='bg-black m-5 p-5 rounded cursor-pointer hover:bg-white hover:text-black transition duration-300 ease-in-out' onClick={() => generatePDF(res.transcription, Object.entries(res.keypoints))}>Download PDF</button>
+                    <button className='bg-black m-5 p-5 rounded cursor-pointer hover:bg-white hover:text-black transition duration-300 ease-in-out' onClick={() => generatePDF(res.transcription, keypoints)}>Download PDF</button>
                   </div>
                 </div>
               </div>
