@@ -187,7 +187,7 @@ const transcribeAudio = async (fileName: string) => {
         const fileBuffer = await getFileFromS3(fileName);
 
         // Create a temporary file to use with OpenAI API
-        const tempDir = './temp';
+        const tempDir = '/tmp';
         if (!fs.existsSync(tempDir)) {
             fs.mkdirSync(tempDir);
         }
