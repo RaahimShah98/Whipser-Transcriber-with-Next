@@ -95,10 +95,27 @@ export function LandingPage() {
                         </div>
                     </div>
                     <nav className="hidden md:block">
-                        <ul className="flex space-x-8">
-                            <li><a href="#features" className="font-large hover:text-purple-500 transition-colors">Features</a></li>
-                            <li><a href="#how-it-works" className="font-xl hover:text-purple-500 transition-colors">How It Works</a></li>
-                            <li><a href="#contact" className="font-xl hover:text-purple-500 transition-colors">Contact</a></li>
+                        <ul className="flex items-center justify-center">
+                            <li className="relative mx-4">
+                                <a href="#features" className="text-xl text-white hover:text-purple-600 transition-colors duration-300 py-2 hover:underline">
+                                    Features
+                                </a>
+                                <div className="absolute h-0.5 w-0 bg-purple-500 bottom-0 left-0 transition-all duration-300 group-hover:w-full"></div>
+                            </li>
+                            <li className="mx-2 text-gray-300">•</li>
+                            <li className="relative mx-4">
+                                <a href="#how-it-works" className="text-xl text-white hover:text-purple-600 transition-colors duration-300 py-2 hover:underline">
+                                    How It Works
+                                </a>
+                                <div className="absolute h-0.5 w-0 bg-purple-500 bottom-0 left-0 transition-all duration-300 group-hover:w-full"></div>
+                            </li>
+                            <li className="mx-2 text-gray-300">•</li>
+                            <li className="relative mx-4">
+                                <a href="#contact" className="text-xl text-white hover:text-purple-600 transition-colors duration-300 py-2 hover:underline">
+                                    Contact
+                                </a>
+                                <div className="absolute h-0.5 w-0 bg-purple-500 bottom-0 left-0 transition-all duration-300 group-hover:w-full"></div>
+                            </li>
                         </ul>
                     </nav>
                 </header>

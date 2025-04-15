@@ -35,7 +35,8 @@ const WhisperTranscription: React.FC = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [duration, setDuration] = useState<number>(0)
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [keypoints , setKeypoints] = useState<Keypoint[]>([])
+  const [keypoints, setKeypoints] = useState<Keypoint[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
 
   // Generate Particles
@@ -161,6 +162,7 @@ const WhisperTranscription: React.FC = () => {
   }
 
   const sendDataToAPI = async () => {
+    setIsLoading(true)
     try {
       const response = await fetch("/api/transcribe", {
         method: "POST",
@@ -177,6 +179,7 @@ const WhisperTranscription: React.FC = () => {
         console.log("Error: ", data);
         return;
       }
+      setIsLoading(false)
 
       console.log("Response: ", data);
 
@@ -271,7 +274,7 @@ const WhisperTranscription: React.FC = () => {
     if (keypoints) {
       console.log("IN EFFECT KEYPOINTS: ", keypoints)
     }
-    
+
   }, [keypoints])
 
 
@@ -307,7 +310,7 @@ const WhisperTranscription: React.FC = () => {
 
     doc.setFontSize(12);
     const points = keypoints[1]
-    console.log("POINTS:  " , points)
+    console.log("POINTS:  ", points)
     keypoints.forEach((keypoint: any, index: number) => {
       console.log(keypoint)
       const title = `${index + 1}. ${keypoint.point}:`;
@@ -332,7 +335,7 @@ const WhisperTranscription: React.FC = () => {
 
   // Function to justify text and return the new Y position
   const justifyText = (text: string, doc: any, x: number, y: number, maxWidth: number) => {
-    console.log("TEXT: " , text)
+    console.log("TEXT: ", text)
     const words = text.split(' ');
     console.log(words)
     let line = '';
@@ -408,17 +411,29 @@ const WhisperTranscription: React.FC = () => {
       </div>
 
       {/* Header */}
-      <header className="w-full p-6 bg-blue-950 bg-opacity-10 backdrop-blur-sm border-b border-blue-400 text-white shadow-xl z-10 flex-shrink-0">
-        <div className="container mx-auto flex items-center">
-          <Mic className="mr-4 text-blue-300" size={40} />
-          <h1 className="text-3xl font-extrabold tracking-wide text-white">
-            Whisper Transcription
-          </h1>
+      <header className="flex justify-between items-center py-8 fixed absolute z-50 bg-white/30 w-[100%] px-12 mb-12 ">
+        <div className="flex items-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="22"></line>
+            </svg>
+          </div>
+          <div className="text-2xl font-bold">
+            Audio<span className="text-purple-500">Verse</span>
+          </div>
         </div>
+        <nav className="hidden md:block">
+          <ul className="flex space-x-8">
+            <li><a onClick={()=> window.location.href = "/"} className="font-large hover:text-purple-500 transition-colors hover:pointer">Home</a></li>
+
+          </ul>
+        </nav>
       </header>
 
       {/* Conversation Container - Now with flex-grow and overflow-y-auto */}
-      <main className="flex-grow flex flex-col w-full px-4 py-6 overflow-y-auto scrollbar-pretty z-10">
+      <main className="flex-grow flex flex-col w-full px-4 py-36 overflow-y-auto scrollbar-pretty z-10">
         <div className="space-y-6 min-h-min">
           {/* Initial Whisper Message */}
           <div className="w-full mx-auto">
@@ -476,6 +491,16 @@ const WhisperTranscription: React.FC = () => {
                 </div>
               </div>
           ))}
+          {isLoading && (
+            <div className="w-[5%] bg-blue-900 bg-opacity-30 text-white p-6 rounded-xl shadow-xl border border-blue-400 shadow-blue-500/30 backdrop-blur-sm flex justify-center items-center space-x-2">
+
+              <span className="flex space-x-1">
+                <span className="animate-bounce delay-100 h-2 w-2 rounded-full bg-blue-400" style={{ animationDelay: '0ms' }}></span>
+                <span className="animate-bounce delay-200 h-2 w-2 rounded-full bg-blue-400" style={{ animationDelay: '150ms' }}></span>
+                <span className="animate-bounce delay-300 h-2 w-2 rounded-full bg-blue-400" style={{ animationDelay: '300ms' }}></span>
+              </span>
+            </div>
+          )}
         </div>
       </main>
 

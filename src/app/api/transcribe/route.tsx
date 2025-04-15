@@ -1,20 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import fs from "fs"
-import path from "path"
-
-
+import fs from "fs";
+import path from "path";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { v4 as uuidv4 } from "uuid";
+import { Readable } from "stream";
 
 type ResponseData = {
     message: string,
     response: object
 }
 
-const openAI = new OpenAI({ apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY });
-const ASSITANT_ID = process.env.NEXT_PUBLIC_OPENAI_ASSISTANT_ID // or gpt-4
+const openAI = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const ASSITANT_ID = process.env.OPENAI_ASSISTANT_ID // or gpt-4
 const ASSISTANT_NAME = "Whisper-NEXT"
 
 let threadId: string | null = null;
+
+// AWS S3 Configuration
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION as string,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
+    },
+});
+
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || "whisper-with-next";
 
 const initializeAssistant = async () => {
     try {
@@ -60,52 +72,6 @@ initializeAssistant().then((assistantId) => {
     }
 });
 
-// save temporarily to mp3
-// const temp_save_to_mp3 = async (file: Base64URLString) => {
-//     try {
-//         console.log("SAVING FILE: ")
-//         // const buffer = Buffer.from(file, 'base64');
-//         const base64Data = file.includes('base64,')
-//             ? file.split('base64,')[1]
-//             : file;
-
-//         const buffer = Buffer.from(base64Data, 'base64');
-//         const tempDir = path.join(process.cwd(), 'temp');
-//         if (!fs.existsSync(tempDir)) {
-//             fs.mkdirSync(tempDir);
-//         }
-//         const filePath = path.join(tempDir, `audio-${Date.now()}.mp3`);
-//         fs.writeFileSync(filePath, buffer);
-//         return filePath;
-//     } catch (e) {
-//         if (e instanceof Error) {
-//             console.log("TEMP FILE ERROR: ", e.message)
-//             return null;
-//         }
-//     }
-// }
-
-const temp_save_to_mp3 = async (file: Base64URLString) => {
-    try {
-        console.log("SAVING FILE: ");
-        const base64Data = file.includes('base64,')
-            ? file.split('base64,')[1]
-            : file;
-
-        const buffer = Buffer.from(base64Data, 'base64');
-        const tempDir = './temp';  // <-- THIS is writable on Vercel.
-
-        const filePath = path.join(tempDir, `audio-${Date.now()}.mp3`);
-        fs.writeFileSync(filePath, buffer);
-        return filePath;
-    } catch (e) {
-        if (e instanceof Error) {
-            console.log("TEMP FILE ERROR: ", e.message);
-            return null;
-        }
-    }
-}
-
 
 // Read mp3 file for transcription
 const reading_mp3 = async () => {
@@ -137,46 +103,130 @@ const reading_mp3 = async () => {
 
 };
 
-// Transcribe the audio file using OpenAI API
-const transcribeAudio = async (filePath: string) => {
-    const lastFilePath = await reading_mp3()
+//
+//
+//
+//
+//
+// USING AWS
+//
+//
+//
+//
+//
 
-    if (!lastFilePath) {
-        console.log("No file found")
-        return
-    }
-
+const uploadToS3 = async (file: string): Promise<string> => {
     try {
-        const transcipriton = await openAI.audio.translations.create({
-            file: fs.createReadStream(lastFilePath),
-            model: "whisper-1",
-        })
+        console.log("UPLOADING TO S3...");
+        const base64Data = file.includes('base64,')
+            ? file.split('base64,')[1]
+            : file;
 
-        console.log(transcipriton.text)
-        if (transcipriton.text.length < 1) {
-            {
-                return { statusCode: 400, message: "No transcription found" }
-            }
+        const buffer = Buffer.from(base64Data, 'base64');
+        const fileName = `audio-${uuidv4()}.mp3`;
+        
+        await s3Client.send(new PutObjectCommand({
+            Bucket: S3_BUCKET_NAME,
+            Key: fileName,
+            Body: buffer,
+            ContentType: 'audio/mpeg'
+        }));
+        
+        console.log(`File uploaded to S3: ${fileName}`);
+        return fileName;
+    } catch (e) {
+        if (e instanceof Error) {
+            console.log("S3 UPLOAD ERROR: ", e.message);
+            throw e;
+        }
+        throw new Error("Unknown error during S3 upload");
+    }
+};
+
+// Get file from S3 for transcription
+const getFileFromS3 = async (fileName: string): Promise<Buffer> => {
+    try {
+        console.log(`GETTING FILE FROM S3: ${fileName}`);
+        
+        const response = await s3Client.send(new GetObjectCommand({
+            Bucket: S3_BUCKET_NAME,
+            Key: fileName
+        }));
+        
+        // Convert the readable stream to a buffer
+        if (!response.Body) {
+            throw new Error("No file body received from S3");
+        }
+        
+        const stream = response.Body as Readable;
+        return await streamToBuffer(stream);
+    } catch (e) {
+        if (e instanceof Error) {
+            console.log("S3 GET FILE ERROR: ", e.message);
+            throw e;
+        }
+        throw new Error("Unknown error getting file from S3");
+    }
+};
+
+// Helper function to convert stream to buffer
+const streamToBuffer = async (stream: Readable): Promise<Buffer> => {
+    return new Promise<Buffer>((resolve, reject) => {
+        const chunks: Buffer[] = [];
+        stream.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+        stream.on('error', reject);
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
+    });
+};
+
+
+// Transcribe the audio file using OpenAI API
+const transcribeAudio = async (fileName: string) => {
+    try {
+        // Get file from S3
+        const fileBuffer = await getFileFromS3(fileName);
+        
+        // Create a temporary file to use with OpenAI API
+        const tempDir = './temp';
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir);
+        }
+        const tempFilePath = path.join(tempDir, `temp-${Date.now()}.mp3`);
+        fs.writeFileSync(tempFilePath, fileBuffer);
+        
+        const transcription = await openAI.audio.translations.create({
+            file: fs.createReadStream(tempFilePath),
+            model: "whisper-1",
+        });
+        
+        // Delete temporary file after use
+        if (fs.existsSync(tempFilePath)) {
+            fs.unlinkSync(tempFilePath);
         }
 
-        const response = await get_response_from_assitant(transcipriton.text);
+        console.log(transcription.text);
+        if (transcription.text.length < 1) {
+            return { statusCode: 400, message: "No transcription found" };
+        }
+
+        const response = await get_response_from_assistant(transcription.text);
 
         return {
-            transcription: transcipriton.text,
+            transcription: transcription.text,
             keypoints: response,
             role: "assistant",
-            filePath: filePath // Return the filePath for deletion
+            fileName: fileName // Return the S3 fileName
         };
     }
     catch (e) {
         if (e instanceof Error) {
             console.log("TRANSCRIPTION ERROR: ", e.message);
-            return { statusCode: 500, message: e.message, filePath: filePath };
+            return { statusCode: 500, message: e.message, fileName: fileName };
         }
     }
-}
+};
 
-const get_response_from_assitant = async (message: string) => {
+const get_response_from_assistant = async (message: string) => {
     try {
         if (!threadId) {
             const thread = await openAI.beta.threads.create()
@@ -249,16 +299,21 @@ const get_response_from_assitant = async (message: string) => {
     }
 }
 
-//Delete after transcription is Complete
-const delete_temp_file = async (filePath: string) => {
+
+// Delete file from S3 if needed
+const deleteFromS3 = async (fileName: string) => {
     try {
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-            console.log(`Deleted temporary file: ${filePath}`);
-        }
-    } catch (error) {
-        if (error instanceof Error) {
-            console.error("Error deleting file:", error.message);
+        console.log(`DELETING FILE FROM S3: ${fileName}`);
+        
+        await s3Client.send(new DeleteObjectCommand({
+            Bucket: S3_BUCKET_NAME,
+            Key: fileName,
+        }));
+        
+        console.log(`File deleted from S3: ${fileName}`);
+    } catch (e) {
+        if (e instanceof Error) {
+            console.log("S3 DELETE ERROR: ", e.message);
         }
     }
 };
@@ -268,15 +323,16 @@ export async function POST(request: NextRequest) {
 
     try {
         const formData = await request.json()
-        // console.log(formData)
         const { audio } = formData
-        console.log("FILE: ", audio)
+        // console.log("FILE: ", audio)
         if (!audio) {
             return NextResponse.json({ message: "No file found" } as ResponseData, { status: 400 });
         }
 
+        // const filePath = await temp_save_to_mp3(audio);
 
-        const filePath = await temp_save_to_mp3(audio);
+        const filePath = await uploadToS3(audio);
+
         console.log("File saved to: ", filePath);
 
         if (!filePath) {
@@ -287,7 +343,7 @@ export async function POST(request: NextRequest) {
         const result = await transcribeAudio(filePath);
 
         // Delete the file after processing
-        await delete_temp_file(filePath);
+        await deleteFromS3(filePath);
         console.log("Temporary file cleaned up");
 
 
