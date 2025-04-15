@@ -124,14 +124,14 @@ const uploadToS3 = async (file: string): Promise<string> => {
 
         const buffer = Buffer.from(base64Data, 'base64');
         const fileName = `audio-${uuidv4()}.mp3`;
-        
+
         await s3Client.send(new PutObjectCommand({
             Bucket: S3_BUCKET_NAME,
             Key: fileName,
             Body: buffer,
             ContentType: 'audio/mpeg'
         }));
-        
+
         console.log(`File uploaded to S3: ${fileName}`);
         return fileName;
     } catch (e) {
@@ -147,17 +147,17 @@ const uploadToS3 = async (file: string): Promise<string> => {
 const getFileFromS3 = async (fileName: string): Promise<Buffer> => {
     try {
         console.log(`GETTING FILE FROM S3: ${fileName}`);
-        
+
         const response = await s3Client.send(new GetObjectCommand({
             Bucket: S3_BUCKET_NAME,
             Key: fileName
         }));
-        
+
         // Convert the readable stream to a buffer
         if (!response.Body) {
             throw new Error("No file body received from S3");
         }
-        
+
         const stream = response.Body as Readable;
         return await streamToBuffer(stream);
     } catch (e) {
@@ -185,7 +185,7 @@ const transcribeAudio = async (fileName: string) => {
     try {
         // Get file from S3
         const fileBuffer = await getFileFromS3(fileName);
-        
+
         // Create a temporary file to use with OpenAI API
         const tempDir = './temp';
         if (!fs.existsSync(tempDir)) {
@@ -193,12 +193,12 @@ const transcribeAudio = async (fileName: string) => {
         }
         const tempFilePath = path.join(tempDir, `temp-${Date.now()}.mp3`);
         fs.writeFileSync(tempFilePath, fileBuffer);
-        
+
         const transcription = await openAI.audio.translations.create({
             file: fs.createReadStream(tempFilePath),
             model: "whisper-1",
         });
-        
+
         // Delete temporary file after use
         if (fs.existsSync(tempFilePath)) {
             fs.unlinkSync(tempFilePath);
@@ -304,12 +304,12 @@ const get_response_from_assistant = async (message: string) => {
 const deleteFromS3 = async (fileName: string) => {
     try {
         console.log(`DELETING FILE FROM S3: ${fileName}`);
-        
+
         await s3Client.send(new DeleteObjectCommand({
             Bucket: S3_BUCKET_NAME,
             Key: fileName,
         }));
-        
+
         console.log(`File deleted from S3: ${fileName}`);
     } catch (e) {
         if (e instanceof Error) {
@@ -320,44 +320,42 @@ const deleteFromS3 = async (fileName: string) => {
 
 
 export async function POST(request: NextRequest) {
-
     try {
-        const formData = await request.json()
-        const { audio } = formData
-        // console.log("FILE: ", audio)
+        const formData = await request.json();
+        const { audio } = formData;
+        console.log("RECEIVED AUDIO DATA");
+
         if (!audio) {
             return NextResponse.json({ message: "No file found" } as ResponseData, { status: 400 });
         }
 
-        // const filePath = await temp_save_to_mp3(audio);
+        // Upload to S3 instead of saving locally
+        const fileName = await uploadToS3(audio);
+        console.log("File uploaded to S3: ", fileName);
 
-        const filePath = await uploadToS3(audio);
+        // Process the file from S3
+        const result = await transcribeAudio(fileName);
 
-        console.log("File saved to: ", filePath);
-
-        if (!filePath) {
-            return NextResponse.json({ message: "File not saved" } as ResponseData, { status: 500 });
-        }
-
-        // Process the file
-        const result = await transcribeAudio(filePath);
 
         // Delete the file after processing
-        await deleteFromS3(filePath);
-        console.log("Temporary file cleaned up");
-
-
+        await deleteFromS3(fileName);
 
         if (result?.statusCode === 400) {
             return NextResponse.json({ message: result.message } as ResponseData, { status: 400 });
         }
+
         if (result) {
             return NextResponse.json({ response: result } as ResponseData, { status: 200 });
         }
-        return NextResponse.json({ message: "Hello World" } as ResponseData, { status: 200 });
+
+        return NextResponse.json({ message: "Processing complete" } as ResponseData, { status: 200 });
     }
     catch (e) {
-        console.error("ERROR: ", e)
+        if (e instanceof Error) {
+            console.error("ERROR: ", e.message);
+            return NextResponse.json({ message: e.message } as ResponseData, { status: 500 });
+        }
+        console.error("UNKNOWN ERROR");
+        return NextResponse.json({ message: "An unknown error occurred" } as ResponseData, { status: 500 });
     }
-
 }
