@@ -455,7 +455,7 @@ const WhisperTranscription: React.FC = () => {
                 <span className="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">Whisper AI</span>
               </div>
               <p className="text-blue-100">
-                Upload an audio file, and I&apos;ll transcribe it for you.
+                Upload an audio file, and I&apos;ll translate and extract keypoints from it for you.
               </p>
             </div>
           </div>
