@@ -37,13 +37,13 @@ const WhisperTranscription: React.FC = () => {
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [keypoints, setKeypoints] = useState<Keypoint[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
-
+  const [stopUpload, setStopUpload] = useState<boolean>(false)
 
   // Generate Particles
   useEffect(() => {
     const generateParticles = () => {
       const newParticles = [];
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 100; i++) {
         newParticles.push({
           id: i,
           x: Math.random() * 100,
@@ -72,6 +72,7 @@ const WhisperTranscription: React.FC = () => {
 
   // Handle Audio Upload
   const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    setStopUpload(true)
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -163,6 +164,7 @@ const WhisperTranscription: React.FC = () => {
 
   const sendDataToAPI = async () => {
     setIsLoading(true)
+
     try {
       const response = await fetch("/api/transcribe", {
         method: "POST",
@@ -193,6 +195,7 @@ const WhisperTranscription: React.FC = () => {
 
       setResponse(response => [...response, data.response]);
       setKeypoints(formatData.keypoints)
+      setStopUpload(false)
 
     } catch (error) {
       if (error instanceof Error) {
@@ -248,6 +251,7 @@ const WhisperTranscription: React.FC = () => {
 
   // Stop Recording
   const stopRecording = () => {
+    setStopUpload(true)
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
@@ -258,32 +262,7 @@ const WhisperTranscription: React.FC = () => {
       }
     }
   };
-  //Send Data to API when audio file Changes
-  useEffect(() => {
-    if (audioFile) {
-      console.log(audioFile)
-      sendDataToAPI()
-    }
-  }, [audioFile])
 
-  useEffect(() => {
-    console.log("IN EFFECT: ", response)
-  }, [response])
-
-  useEffect(() => {
-    if (keypoints) {
-      console.log("IN EFFECT KEYPOINTS: ", keypoints)
-    }
-
-  }, [keypoints])
-
-
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
-  };
-
-
-  //Generate pdf
 
   //Generate PDF with justified text
   const generatePDF = (transcript: string, keypoints: any[]) => {
@@ -388,10 +367,43 @@ const WhisperTranscription: React.FC = () => {
   };
 
 
+  //Send Data to API when audio file Changes
+  useEffect(() => {
+    if (audioFile) {
+      console.log(audioFile)
+      sendDataToAPI()
+    }
+  }, [audioFile])
+
+  useEffect(() => { }, [stopUpload])
+
+
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    console.log("IN EFFECT: ", response)
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [response])
+
+  useEffect(() => {
+    if (keypoints) {
+      console.log("IN EFFECT KEYPOINTS: ", keypoints)
+    }
+
+  }, [keypoints])
+
+
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+
+
+
+
 
 
   return (
-    <div className="h-screen w-screen bg-gradient-to-b from-blue-950 to-black flex flex-col overflow-hidden relative">
+    <div className="h-screen w-screen bg-gradient-to-b from-blue-950 to-black flex flex-col overflow-hidden relative ">
       {/* Particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {particles.map(particle => (
@@ -411,7 +423,7 @@ const WhisperTranscription: React.FC = () => {
       </div>
 
       {/* Header */}
-      <header className="flex justify-between items-center py-8 fixed absolute z-50 bg-white/30 w-[100%] px-12 mb-12 ">
+      <header className="flex justify-between items-center py-8 fixed absolute z-50 bg-white/30 w-[100%] px-12 mb-12 backdrop-blur-lg ">
         <div className="flex items-center">
           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -421,12 +433,12 @@ const WhisperTranscription: React.FC = () => {
             </svg>
           </div>
           <div className="text-2xl font-bold">
-            Audio<span className="text-purple-500">Verse</span>
+            Audio<span className="text-blue-800">Verse</span>
           </div>
         </div>
         <nav className="hidden md:block">
           <ul className="flex space-x-8">
-            <li><a onClick={()=> window.location.href = "/"} className="font-large hover:text-purple-500 transition-colors hover:pointer">Home</a></li>
+            <li><a onClick={() => window.location.href = "/"} className="font-large hover:text-purple-500 transition-colors hover:pointer">Home</a></li>
 
           </ul>
         </nav>
@@ -434,7 +446,7 @@ const WhisperTranscription: React.FC = () => {
 
       {/* Conversation Container - Now with flex-grow and overflow-y-auto */}
       <main className="flex-grow flex flex-col w-full px-4 py-36 overflow-y-auto scrollbar-pretty z-10">
-        <div className="space-y-6 min-h-min">
+        <div className="space-y-6 min-h-min z-50">
           {/* Initial Whisper Message */}
           <div className="w-full mx-auto">
             <div className="bg-blue-900 bg-opacity-30 text-white p-6 rounded-xl shadow-xl border border-blue-400 shadow-blue-500/30 backdrop-blur-sm">
@@ -507,25 +519,36 @@ const WhisperTranscription: React.FC = () => {
       {/* File Upload Section - Now with position fixed */}
       <footer className="w-full p-4 bg-blue-950 bg-opacity-70 backdrop-blur-sm border-t border-blue-400 z-10 flex-shrink-0">
         <div className="container mx-auto flex justify-center">
-          <label className="flex items-center justify-center w-full max-w-md px-2 py-4 bg-blue-800 text-white rounded-xl cursor-pointer hover:bg-blue-700 transition-colors duration-300 shadow-xl shadow-blue-500/30 border border-blue-400">
+          <label
+            className={`flex items-center justify-center w-full max-w-md px-2 py-4 rounded-xl transition-colors duration-300 shadow-xl border ${stopUpload
+              ? "bg-blue-500 text-white opacity-50 cursor-not-allowed border-blue-300 shadow-none"
+              : "bg-blue-800 text-white hover:bg-blue-700 shadow-blue-500/30 border-blue-400 cursor-pointer"
+              }`}
+          >
             <Upload className="mr-3 text-blue-200" size={24} />
             <span className="text-lg font-semibold">Upload Audio File</span>
             <input
               type="file"
               accept="audio/*"
+              disabled={stopUpload}
               className="hidden"
               onChange={handleAudioUpload}
             />
           </label>
-          <div className="m-4 ">
+
+          <div className="m-4">
             <button
-              onClick={togglePlay}
-              className="bg-blue-800 hover:bg-blue-700 text-white p-2 rounded-full w-10 h-10 flex items-center justify-center transition-colors cursor-pointer"
+              onClick={!stopUpload ? togglePlay : undefined}
+              disabled={stopUpload}
+              className={`${!stopUpload ? "flex" : "opacity-50 cursor-not-allowed"
+                } bg-blue-800 hover:bg-blue-700 text-white p-2 rounded-full w-10 h-10 items-center justify-center transition-colors`}
             >
               {isRecording ? <Pause size={20} onClick={stopRecording} /> : <Play size={20} onClick={startRecording} />}
             </button>
           </div>
+
         </div>
+
       </footer>
     </div>
   );

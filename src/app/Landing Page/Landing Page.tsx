@@ -28,7 +28,7 @@ export function LandingPage() {
             transparent: true,
         });
 
-        const starsCount = 100;
+        const starsCount = 300;
         const starsPositions = new Float32Array(starsCount * 3);
 
         for (let i = 0; i < starsCount * 3; i += 3) {
@@ -80,8 +80,8 @@ export function LandingPage() {
 
             <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full -z-10" />
 
-            <div className="font-['Space_Grotesk'] text-white bg-transparent">
-                <header className="flex justify-between items-center py-8 fixed absolute z-50 bg-white/30 w-[100%] px-12 mb-12 ">
+            <div className="font-['Space_Grotesk'] text-white backdrop-blur">
+                <header className="flex justify-between items-center py-8 fixed absolute z-50 bg-white/30 w-[100%] px-12 mb-12 backdrop-blur-lg ">
                     <div className="flex items-center">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
