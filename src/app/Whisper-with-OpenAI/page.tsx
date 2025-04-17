@@ -7,11 +7,14 @@ import { Play, Pause } from 'lucide-react';
 import jsPDF from 'jspdf';
 
 
+
 interface ResponseInterface {
+  type: string;
   base64: string;
   role: string;
   transcription: string;
   keypoints: string;
+  duration: number;
 }
 
 interface Keypoint {
@@ -35,6 +38,7 @@ const WhisperTranscription: React.FC = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [duration, setDuration] = useState<number>(0)
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingStartTimeRef = useRef<number>(0); // Add this to track absolute start time
   const [keypoints, setKeypoints] = useState<Keypoint[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [stopUpload, setStopUpload] = useState<boolean>(false)
@@ -70,22 +74,70 @@ const WhisperTranscription: React.FC = () => {
     return () => clearInterval(moveParticles);
   }, []);
 
-  // Handle Audio Upload
+  // HANDLE AUDIO FILE UPLOAD
   const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    setStopUpload(true)
+    setStopUpload(true);
     const file = event.target.files?.[0];
     if (!file) return;
-
+    console.log("FILE: ", file);
+    
     if (!file.type.startsWith("audio/")) {
       alert("Please select a valid audio file!");
       event.target.value = ""; // Clear the input field
       return;
     }
-
+  
     if (file) {
-      const base64String = await convertToBase64(file);
-      setAudioFile(base64String);
-      setResponse(prevResponse => [...prevResponse, { base64: base64String, role: "user", transcription: "", keypoints: "" }]);
+      // Create URL for the audio file
+      const audioUrl = URL.createObjectURL(file);
+      
+      // Create audio element to get duration
+      const audio = new Audio();
+      
+      // Get duration when audio metadata is loaded
+      audio.onloadedmetadata = async () => {
+        const audioDuration = audio.duration;
+        console.log("Audio duration:", audioDuration, "seconds");
+        
+        // Convert to base64 after getting duration
+        const base64String = await convertToBase64(file);
+        setAudioFile(base64String);
+        
+        // Include the duration in the response
+        setResponse(prevResponse => [...prevResponse, { 
+          type: "File", 
+          base64: base64String, 
+          role: "user", 
+          transcription: "", 
+          keypoints: "", 
+          duration: audioDuration 
+        }]);
+        
+        // Clean up URL object
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      // Set audio source to start loading metadata
+      audio.src = audioUrl;
+      
+      // Handle errors in loading audio
+      audio.onerror = (error) => {
+        console.error("Error loading audio:", error);
+        alert("Could not determine audio duration. Using default value.");
+        
+        // Proceed anyway with duration as 0
+        convertToBase64(file).then(base64String => {
+          setAudioFile(base64String);
+          setResponse(prevResponse => [...prevResponse, { 
+            type: "File", 
+            base64: base64String, 
+            role: "user", 
+            transcription: "", 
+            keypoints: "", 
+            duration: 0 
+          }]);
+        });
+      };
     }
   };
 
@@ -221,7 +273,7 @@ const WhisperTranscription: React.FC = () => {
           clearInterval(durationIntervalRef.current);
         }
 
-        const finalDuration = duration;
+        const finalDuration = (Date.now() - recordingStartTimeRef.current) / 1000;
         const audioBlob = new Blob(chunks, { type: "audio/mpeg" });
         console.log(audioBlob);
 
@@ -232,18 +284,27 @@ const WhisperTranscription: React.FC = () => {
         // const base64String = await convertBlobToBase64(audioBlob);
         const base64String = await convertToBase64(audioFile);
         setAudioFile(base64String);
-        setResponse(prevResponse => [...prevResponse, { base64: base64String, role: "user", transcription: "", keypoints: "", duration: finalDuration, }]);
+        setResponse(prevResponse => [...prevResponse, { type: "Mic", base64: base64String, role: "user", transcription: "", keypoints: "", duration: finalDuration, }]);
         setDuration(0); // Reset duration
       };
+
 
       mediaRecorder.start();
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
 
-      // Start duration timer (0.1s intervals)
+
+      // Set the start time reference
+      recordingStartTimeRef.current = Date.now();
+
       durationIntervalRef.current = setInterval(() => {
-        setDuration((prevDuration) => +(prevDuration + 0.1).toFixed(1));
+        const elapsedSeconds = (Date.now() - recordingStartTimeRef.current) / 1000;
+        setDuration(Number(elapsedSeconds.toFixed(1)));
       }, 100);
+
+      console.log("Recording started at:", new Date(recordingStartTimeRef.current).toLocaleTimeString());
+    
+
     } catch (error) {
       console.error("Error accessing microphone:", error);
     }
@@ -465,7 +526,7 @@ const WhisperTranscription: React.FC = () => {
             res.role === "user" ?
               <div key={index} className="flex justify-end w-full">
                 <div className="w-3/5">
-                  <GloomyAudioPlayer audioSource={res.base64 || ''} audioDuration={duration} />
+                  <GloomyAudioPlayer fileType={res.type} audioSource={res.base64 || ''} audioDuration={res?.duration || 0} />
                 </div>
               </div>
               :

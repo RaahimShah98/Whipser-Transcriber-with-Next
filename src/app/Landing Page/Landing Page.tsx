@@ -24,7 +24,7 @@ export function LandingPage() {
         const starsGeometry = new THREE.BufferGeometry();
         const starsMaterial = new THREE.PointsMaterial({
             color: 0xffffff,
-            size: 0.7,
+            size: 0.5,
             transparent: true,
         });
 
@@ -80,7 +80,7 @@ export function LandingPage() {
 
             <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full -z-10" />
 
-            <div className="font-['Space_Grotesk'] text-white backdrop-blur">
+            <div className="font-['Space_Grotesk'] text-white backdrop-blur ">
                 <header className="flex justify-between items-center py-8 fixed absolute z-50 bg-white/30 w-[100%] px-12 mb-12 backdrop-blur-lg ">
                     <div className="flex items-center">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">

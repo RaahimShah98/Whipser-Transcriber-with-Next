@@ -3,11 +3,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause } from 'lucide-react';
 
 interface GloomyAudioPlayerProps {
+  fileType: string;
   audioSource: string;
-  audioDuration:number
+  audioDuration: number
 }
 
-const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ audioSource , audioDuration }) => {
+const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ fileType, audioSource, audioDuration }) => {
+  console.log(audioDuration)
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(audioDuration);
@@ -16,21 +18,25 @@ const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ audioSource , aud
 
   useEffect(() => {
     const audio = audioRef.current;
+    console.log("AUDIOL ", audio)
     if (!audio) return;
-    
+
     const setAudioData = () => {
-      setDuration(audio.duration);
+      if (fileType == "file") {
+        setDuration(audio.duration);
+      }
+      else { setDuration(audioDuration) }
       console.log(audio.duration)
     };
-    
+
     const setAudioTime = () => {
       setCurrentTime(audio.currentTime);
     };
-    
+
     // Set up event listeners
     audio.addEventListener('loadeddata', setAudioData);
     audio.addEventListener('timeupdate', setAudioTime);
-    
+
     // Cleanup
     return () => {
       audio.removeEventListener('loadeddata', setAudioData);
@@ -41,7 +47,7 @@ const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ audioSource , aud
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    
+
     if (isPlaying) {
       audio.pause();
     } else {
@@ -54,13 +60,13 @@ const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ audioSource , aud
     const progressBar = progressBarRef.current;
     const audio = audioRef.current;
     if (!progressBar || !audio) return;
-    
+
     const rect = progressBar.getBoundingClientRect();
     const clickPosition = e.clientX - rect.left;
     const percentClicked = clickPosition / rect.width;
-    
+
     // Set the audio's current time based on the click position
-    audio.currentTime = percentClicked * duration;
+    audio.currentTime = percentClicked * audioDuration;
   };
 
   // Format time in mm:ss
@@ -79,30 +85,30 @@ const GloomyAudioPlayer: React.FC<GloomyAudioPlayerProps> = ({ audioSource , aud
         onEnded={() => setIsPlaying(false)}
         src={audioSource}
       />
-      
+
       {/* Player Controls */}
       <div className="flex items-center gap-4 mb-3">
-        <button 
+        <button
           onClick={togglePlay}
           className="bg-blue-800 hover:bg-black text-white p-2 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
         >
-          {isPlaying ? <Pause  size={20} /> : <Play size={20} />}
+          {isPlaying ? <Pause size={20} /> : <Play size={20} />}
         </button>
-        
+
         <div className="text-gray-300 text-sm">
-          {formatTime(currentTime)}
+          {formatTime(currentTime)} / {formatTime(audioDuration)}
         </div>
       </div>
-      
+
       {/* Progress Bar */}
-      <div 
+      <div
         ref={progressBarRef}
         onClick={handleProgressClick}
         className="h-2 bg-gray-700 rounded-full w-full cursor-pointer overflow-hidden"
       >
-        <div 
+        <div
           className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full transition-all"
-          style={{ width: `${(currentTime / duration) * 100 || 0}%` }}
+          style={{ width: `${(currentTime / audioDuration) * 100 || 0}%` }}
         ></div>
       </div>
     </div>
